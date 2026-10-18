@@ -20,8 +20,6 @@ const i18n = {
         viewPrint: "📄 عرض / طباعة التقرير",
         reviewed: "تمت المراجعة",
         wrongPass: "كلمة المرور غير صحيحة!",
-        enterCurrentPass: "أدخل كلمة المرور الحالية للإدارة:",
-        enterNewPass: "أدخل كلمة المرور الجديدة:",
         passSuccess: "تم تغيير كلمة المرور بنجاح!",
         clearConfirm: "هل أنت متأكد من مسح جميع التقارير من السجل والسحابة؟"
     },
@@ -40,8 +38,6 @@ const i18n = {
         viewPrint: "📄 View / Print Report",
         reviewed: "Reviewed",
         wrongPass: "Incorrect password!",
-        enterCurrentPass: "Enter current admin password:",
-        enterNewPass: "Enter new password:",
         passSuccess: "Password changed successfully!",
         clearConfirm: "Are you sure you want to clear all reports from cloud and history?"
     }
@@ -63,23 +59,24 @@ function applyLanguage() {
 
     const t = i18n[currentLang];
 
-    document.getElementById('i18n-login-title').innerText = t.loginTitle;
-    document.getElementById('i18n-login-desc').innerText = t.loginDesc;
-    document.getElementById('i18n-login-btn').innerText = t.loginBtn;
+    if (document.getElementById('i18n-login-title')) document.getElementById('i18n-login-title').innerText = t.loginTitle;
+    if (document.getElementById('i18n-login-desc')) document.getElementById('i18n-login-desc').innerText = t.loginDesc;
+    if (document.getElementById('i18n-login-btn')) document.getElementById('i18n-login-btn').innerText = t.loginBtn;
 
-    document.getElementById('i18n-dash-title').innerText = t.dashTitle;
-    document.getElementById('i18n-dash-sub').innerText = t.dashSub;
+    if (document.getElementById('i18n-dash-title')) document.getElementById('i18n-dash-title').innerText = t.dashTitle;
+    if (document.getElementById('i18n-dash-sub')) document.getElementById('i18n-dash-sub').innerText = t.dashSub;
 
-    document.getElementById('i18n-btn-refresh').innerText = t.btnRefresh;
-    document.getElementById('i18n-btn-settings').innerText = t.btnSettings;
-    document.getElementById('i18n-btn-clear').innerText = t.btnClear;
+    if (document.getElementById('i18n-btn-refresh')) document.getElementById('i18n-btn-refresh').innerText = t.btnRefresh;
+    if (document.getElementById('i18n-btn-settings')) document.getElementById('i18n-btn-settings').innerText = t.btnSettings;
+    if (document.getElementById('i18n-btn-clear')) document.getElementById('i18n-btn-clear').innerText = t.btnClear;
 }
 
 // Retrieve Password
 function getHQPassword() {
     return localStorage.getItem('salma_hq_password') || "0000";
 }
-// Open Custom Password Change Modal
+
+// Custom Password Change Modal Controls
 function openPasswordModalHQ() {
     document.getElementById('current-pass-input').value = "";
     document.getElementById('new-pass-input').value = "";
@@ -110,6 +107,7 @@ function confirmHQPasswordChange() {
     alert(t.passSuccess);
     closePasswordModalHQ();
 }
+
 // Theme Toggle
 function toggleTheme() {
     document.body.classList.toggle("dark-mode");
@@ -126,7 +124,7 @@ function unlockHQApp() {
         document.getElementById('hq-dashboard').classList.remove('hidden');
 
         fetchAndRenderReports();
-        setInterval(fetchAndRenderReports, 1 * 60 * 1000);
+        setInterval(fetchAndRenderReports, 5 * 60 * 1000);
     } else {
         alert(i18n[currentLang].wrongPass);
     }
@@ -187,25 +185,73 @@ function renderReportsUI(reports) {
     });
 }
 
-// Open HTML Report Window
+// =========================================================================
+// 🖨️ OPEN HTML REPORT WINDOW (MOBILE APK & WEBVIEW FIX)
+// =========================================================================
 function openReportView(dataUri) {
     if (!dataUri) return alert("Report data incomplete.");
 
-    const win = window.open("", "_blank");
     try {
         const base64Part = dataUri.includes(",") ? dataUri.split(',')[1] : dataUri;
-        const htmlContent = decodeURIComponent(escape(atob(base64Part)));
+        let htmlContent = decodeURIComponent(escape(atob(base64Part)));
 
-        win.document.write(htmlContent);
-        win.document.write(`
-            <div style="text-align: center; margin: 30px 0; font-family: system-ui, sans-serif;">
-                <button onclick="window.print()" style="padding: 12px 24px; font-size: 16px; font-weight: bold; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">🖨️ Print / Save as PDF</button>
+        // Inject Print Styles & APK Print Handler Script
+        const printScriptAndStyles = `
+            <style>
+                @media print {
+                    .no-print { display: none !important; }
+                    body { padding: 0 !important; background: #fff !important; color: #000 !important; }
+                }
+            </style>
+            <script>
+                function doPrint() {
+                    try {
+                        window.print();
+                    } catch (e) {
+                        alert("Print feature is restricted inside this app view. Please take a screenshot or open in browser.");
+                    }
+                }
+            </script>
+        `;
+
+        const printButtonHtml = `
+            <div class="no-print" style="text-align: center; margin: 30px 0; font-family: system-ui, sans-serif;">
+                <button onclick="doPrint()" style="padding: 14px 28px; font-size: 16px; font-weight: bold; background: #2563eb; color: white; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 14px rgba(37,99,235,0.4);">
+                    🖨️ طباعة / حفظ PDF
+                </button>
             </div>
-        `);
-        win.document.close();
+        `;
+
+        // Inject into HTML document
+        if (htmlContent.includes("</head>")) {
+            htmlContent = htmlContent.replace("</head>", `${printScriptAndStyles}</head>`);
+        } else {
+            htmlContent = printScriptAndStyles + htmlContent;
+        }
+
+        if (htmlContent.includes("</body>")) {
+            htmlContent = htmlContent.replace("</body>", `${printButtonHtml}</body>`);
+        } else {
+            htmlContent += printButtonHtml;
+        }
+
+        // 1. Primary Attempt: Standard Window opening
+        const win = window.open("", "_blank");
+        if (win) {
+            win.document.open();
+            win.document.write(htmlContent);
+            win.document.close();
+        } else {
+            // 2. Android APK Fallback: Create Blob URL if popup window is blocked
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const blobUrl = URL.createObjectURL(blob);
+            window.location.href = blobUrl;
+        }
+
     } catch (e) {
         console.error(e);
-        win.location.href = dataUri;
+        // Fallback to direct URL navigation
+        window.location.href = dataUri;
     }
 }
 
@@ -237,22 +283,6 @@ async function clearAllReports() {
         } catch (error) {
             console.error(error);
         }
-    }
-}
-
-// Password Change
-function changeHQPassword() {
-    const t = i18n[currentLang];
-    const currentPass = getHQPassword();
-    const entered = prompt(t.enterCurrentPass);
-
-    if (entered === null) return;
-    if (entered !== currentPass) return alert(t.wrongPass);
-
-    const newPass = prompt(t.enterNewPass);
-    if (newPass && newPass.trim() !== "") {
-        localStorage.setItem('salma_hq_password', newPass.trim());
-        alert(t.passSuccess);
     }
 }
 
