@@ -79,7 +79,37 @@ function applyLanguage() {
 function getHQPassword() {
     return localStorage.getItem('salma_hq_password') || "0000";
 }
+// Open Custom Password Change Modal
+function openPasswordModalHQ() {
+    document.getElementById('current-pass-input').value = "";
+    document.getElementById('new-pass-input').value = "";
+    document.getElementById('pass-modal-overlay').style.display = "flex";
+}
 
+function closePasswordModalHQ() {
+    document.getElementById('pass-modal-overlay').style.display = "none";
+}
+
+function confirmHQPasswordChange() {
+    const t = i18n[currentLang];
+    const currentPass = getHQPassword();
+    const enteredCurrent = document.getElementById('current-pass-input').value;
+    const newPass = document.getElementById('new-pass-input').value.trim();
+
+    if (enteredCurrent !== currentPass) {
+        alert(t.wrongPass);
+        return;
+    }
+
+    if (!newPass) {
+        alert(currentLang === 'ar' ? "يرجى إدخال كلمة المرور الجديدة!" : "Please enter a new password!");
+        return;
+    }
+
+    localStorage.setItem('salma_hq_password', newPass);
+    alert(t.passSuccess);
+    closePasswordModalHQ();
+}
 // Theme Toggle
 function toggleTheme() {
     document.body.classList.toggle("dark-mode");
@@ -96,7 +126,7 @@ function unlockHQApp() {
         document.getElementById('hq-dashboard').classList.remove('hidden');
 
         fetchAndRenderReports();
-        setInterval(fetchAndRenderReports, 5 * 60 * 1000);
+        setInterval(fetchAndRenderReports, 1 * 60 * 1000);
     } else {
         alert(i18n[currentLang].wrongPass);
     }
