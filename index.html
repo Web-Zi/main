@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salma HQ Inventory Receiver</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-mode">
+
+    <!-- Login Modal -->
+    <div id="hq-login-screen" class="modal-overlay" style="display: flex;">
+        <div class="modal-box">
+            <h2 id="i18n-login-title">🏢 الفرع الرئيسي - تسجيل الدخول</h2>
+            <p id="i18n-login-desc">يرجى إدخال كلمة المرور للوصول إلى لوحة التقارير</p>
+            <input type="password" id="hq-app-password" placeholder="كلمة المرور (الافتراضية: 0000)" class="styled-input">
+            <button onclick="unlockHQApp()" class="btn-primary" style="width: 100%; margin-top: 10px; justify-content: center;">
+                <span id="i18n-login-btn">دخول</span> ➔
+            </button>
+        </div>
+    </div>
+
+    <!-- Dashboard Main View -->
+    <div id="hq-dashboard" class="hidden container">
+        <header class="top-bar">
+            <div class="header-titles">
+                <h1 id="i18n-dash-title">🏢 لوحة تحكم الفرع الرئيسي</h1>
+                <p id="i18n-dash-sub">متابعة تقارير الجرد المستلمة من الفروع</p>
+            </div>
+            <div class="header-actions">
+                <button onclick="toggleLanguage()" class="btn-secondary" id="lang-btn">🌐 EN / AR</button>
+                <button onclick="toggleTheme()" class="btn-secondary" title="تغيير المظهر">🌙 / ☀️</button>
+                <button onclick="fetchAndRenderReports()" class="btn-secondary"><span id="i18n-btn-refresh">🔄 تحديث</span></button>
+                <button onclick="changeHQPassword()" class="btn-secondary"><span id="i18n-btn-settings">⚙️ كلمة المرور</span></button>
+                <button onclick="clearAllReports()" class="btn-danger"><span id="i18n-btn-clear">🗑️ مسح الكل</span></button>
+            </div>
+        </header>
+
+        <main class="content-area">
+            <div id="reports-list" class="reports-grid">
+                <p style="text-align: center; color: var(--text-secondary); font-weight: bold;">جاري تحميل التقارير...</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
